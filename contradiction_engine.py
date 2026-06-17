@@ -40,12 +40,13 @@ def detect_contradictions(claims, embeddings):
             nli_score = get_nli_score(a["claim"], b["claim"])
 
             # smart pruning
-            if similarity < 0.4 and nli_score < 0.3:
+            # require claims to actually be about the same thing
+            if similarity < 0.55:
                 continue
 
             final = (
-                    (similarity ** 0.5) * SIM_WEIGHT +
-                    nli_score * NLI_WEIGHT
+                    similarity * 0.6 +
+                    nli_score * 0.4
             )
 
             if final >= FINAL_CONTRADICTION_THRESHOLD:

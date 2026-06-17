@@ -3,7 +3,7 @@ from sklearn.cluster import DBSCAN
 import numpy as np
 
 
-def build_event_clusters(embeddings, eps=0.7):
+def build_event_clusters(embeddings, eps=0.3):
 
     clustering = DBSCAN(
         eps=eps,

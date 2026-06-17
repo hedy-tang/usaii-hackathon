@@ -1,12 +1,9 @@
-import pandas as pd
-
 from data_models import CLAIMS, to_dict_list
 
 from embedding_engine import embed_claims
 from contradiction_engine import detect_contradictions
 
-from feature_engine import build_features
-from confidence_engine import train_confidence_model
+from confidence_engine import score_claims
 
 from explanation_engine import explain_all_claims
 
@@ -81,68 +78,49 @@ def run_pipeline():
         )
 
     # =====================================================
-    # STEP 4 — FEATURE ENGINEERING
+    # STEP 4 — ENRICH CONTRADICTION METADATA
     # =====================================================
 
-    print("\n[4] Building ML features...")
-
-    features = build_features(
-        claims,
-        contradictions,
-        embeddings
-    )
-
-    feature_df = pd.DataFrame(features)
-
-    print("Feature matrix shape:", feature_df.shape)
-
-    # =====================================================
-    # STEP 5 — TRAIN CONFIDENCE MODEL
-    # =====================================================
-
-    print("\n[5] Training confidence model...")
-
-    model = train_confidence_model(feature_df)
-
-    print("Confidence model trained.")
-
-    # =====================================================
-    # STEP 6 — ASSIGN CONFIDENCE SCORES
-    # =====================================================
-
-    print("\n[6] Scoring claims...")
-
-    for i in range(len(claims)):
-
-        row = pd.DataFrame([feature_df.iloc[i]])
-
-        score = float(model.predict(row)[0])
-
-        # clamp into probability range
-        score = max(0.0, min(1.0, score))
-        
-        claims[i]["confidence_score"] = float(score)
-
-    # =====================================================
-    # STEP 7 — ADD CONTRADICTION COUNTS
-    # =====================================================
-
-    print("\n[7] Enriching contradiction metadata...")
+    print("\n[4] Enriching contradiction metadata...")
 
     for c in claims:
 
-        count = sum(
-            1 for x in contradictions
+        related = [
+            x for x in contradictions
             if (
                     x["claim_a"]["claim"] == c["claim"]
                     or x["claim_b"]["claim"] == c["claim"]
             )
-        )
+        ]
 
-        c["contradiction_count"] = count
+        c["contradiction_count"] = len(related)
+
+        if related:
+
+            avg_severity = sum(
+                x["contradiction_confidence"]
+                for x in related
+            ) / len(related)
+
+            c["contradiction_severity"] = round(
+                avg_severity,
+                3
+            )
+
+        else:
+
+            c["contradiction_severity"] = 0.0
 
     # =====================================================
-    # STEP 8 — PRINT CLAIM SCORES
+    # STEP 5 — COMPUTE CONFIDENCE SCORES
+    # =====================================================
+
+    print("\n[5] Computing confidence scores...")
+
+    claims = score_claims(claims)
+
+    # =====================================================
+    # STEP 6 — PRINT CLAIM SCORES
     # =====================================================
 
     print("\n=== CLAIM CONFIDENCE SCORES ===")
@@ -153,14 +131,15 @@ def run_pipeline():
             f"\nClaim: {c['claim']}"
             f"\nConfidence Score: {round(c['confidence_score'], 3)}"
             f"\nContradictions: {c['contradiction_count']}"
+            f"\nContradiction Severity: {round(c['contradiction_severity'], 3)}"
             f"\nSource: {c['source_type']}"
         )
 
     # =====================================================
-    # STEP 9 — GENERATE EXPLANATIONS
+    # STEP 7 — GENERATE EXPLANATIONS
     # =====================================================
 
-    print("\n[8] Generating explanations...")
+    print("\n[6] Generating explanations...")
 
     claims = explain_all_claims(claims)
 
@@ -172,10 +151,10 @@ def run_pipeline():
         print(c["explanation"])
 
     # =====================================================
-    # STEP 10 — BUILD GRAPH
+    # STEP 8 — BUILD GRAPH
     # =====================================================
 
-    print("\n[9] Building reasoning graph...")
+    print("\n[7] Building reasoning graph...")
 
     graph = build_graph(
         claims,
@@ -190,7 +169,7 @@ def run_pipeline():
         print(f"{k}: {v}")
 
     # =====================================================
-    # STEP 11 — TOP RISKY CLAIMS
+    # STEP 9 — TOP RISKY CLAIMS
     # =====================================================
 
     print("\n=== TOP RISKY CLAIMS ===")
@@ -205,7 +184,7 @@ def run_pipeline():
         )
 
     # =====================================================
-    # STEP 12 — EVENT DETECTION
+    # STEP 10 — EVENT DETECTION
     # =====================================================
 
     print("\n=== EVENTS DETECTED ===")
@@ -237,8 +216,7 @@ def run_pipeline():
         "claims": claims,
         "contradictions": contradictions,
         "graph": graph,
-        "events": events,
-        "model": model
+        "events": events
     }
 
 
