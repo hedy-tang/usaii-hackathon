@@ -134,6 +134,9 @@ CLAIMS = [
     Claim("rail service is operating normally", "transport_rail_status", "social", "medium"),
 
     Claim("all transit systems remain unaffected", "transport_system_status", "social", "medium"),
+    Claim("Calimesa, California - 06/15/2026 - Shore Fire near Riverside County at 500+ acres, evacuations and crews added", "wildfire_fire_status", "social", "high"),
+    Claim("Calimesa, California - 06/15/2026 - Shore Fire near Riverside County at 500+ acres, evacuations and crews added", "wildfire_fire_status", "social", "medium"),
+    Claim("[Local] - 06/16/2026 - Stretch of 60 Freeway remains closed, evacuation orders issued due to Shore Fire in Riverside County | NY Post", "wildfire_fire_status", "news", "high"),
 ]
 
 # =========================================================
@@ -142,3 +145,8 @@ CLAIMS = [
 
 def to_dict_list(claims: List[Claim]) -> List[Dict]:
     return [c.__dict__ for c in claims]
+
+
+    Claim("Calimesa, California - 06/15/2026 - Shore Fire near Riverside County at 500+ acres, evacuations and crews added", "wildfire_fire_status", "social", "low"),
+    Claim("Calimesa, California - 06/15/2026 - Shore Fire near Riverside County at 500+ acres, evacuations and crews added", "wildfire_fire_status", "social", "low"),
+    Claim("[Local] - 06/16/2026 - Stretch of 60 Freeway remains closed, evacuation orders issued due to Shore Fire in Riverside County | NY Post", "wildfire_fire_status", "social", "low"),

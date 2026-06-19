@@ -32,6 +32,22 @@ def run_pipeline():
 
     print("\n[1] Loading claims...")
 
+    # Attempt to run the reddit->claims converter which may insert/update
+    # `data_models.CLAIMS` before we load them. Fail safely if the script
+    # or ClaimeAI agents aren't available.
+    try:
+        from data import generate_claims_from_reddit
+
+        try:
+            generate_claims_from_reddit.main()
+            print("Ran data/generate_claims_from_reddit.py to refresh CLAIMS.")
+        except Exception:
+            # continue; the script may perform insertion itself or fail
+            print("Warning: generate_claims_from_reddit.main() raised an error; continuing with existing CLAIMS.")
+    except Exception:
+        # module not importable; continue with existing claims
+        pass
+
     claims = to_dict_list(CLAIMS)
 
     print(f"Loaded {len(claims)} claims.")
